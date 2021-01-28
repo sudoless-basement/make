@@ -100,6 +100,3 @@ spelling: ## run misspell check
 .PHONY: help
 help:
 	@grep -h -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
-
-Makefile: ## update this Makefile
-	curl https://gitlab.com/api/v4/projects/23982300/repository/files/Makefile/raw?private_token=$GITLAB_TOKEN&ref=master > Makefile
