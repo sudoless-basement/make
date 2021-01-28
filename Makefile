@@ -48,7 +48,6 @@ $(DIR_OUT):
 	@mkdir -p $(DIR_OUT)
 
 .PHONY: test
-test: SHELL = /bin/bash
 test: export CGO_ENABLED=1
 test: $(DIR_OUT) ## run unit tests
 	@gotestsum \
@@ -87,7 +86,7 @@ updates: ## display outdated direct dependencies
 
 .PHONY: lint
 lint: ## run golangci linter
-	@golangci-lint run -v --skip-dirs=".cache/|vendor/"  ./...
+	@golangci-lint run -v --timeout 2m --skip-dirs=".cache/|vendor/"  ./...
 
 .PHONY: check
 check: ## run cyclic and security checks
