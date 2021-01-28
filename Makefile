@@ -1,4 +1,3 @@
-
 export PATH := $(abspath bin/):${PATH}
 export CGO_ENABLED ?= 0
 
@@ -88,7 +87,7 @@ updates: ## display outdated direct dependencies
 
 .PHONY: lint
 lint: ## run golangci linter
-	@golangci-lint run --skip-dirs=".cache/|vendor/"  ./...
+	@golangci-lint run -v --skip-dirs=".cache/|vendor/"  ./...
 
 .PHONY: check
 check: ## run cyclic and security checks
