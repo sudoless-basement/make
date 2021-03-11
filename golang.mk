@@ -23,8 +23,8 @@ run-%: build-% ## run the specified target
 
 .PHONY: build-%
 build-%: ## build a specific cmd/$(TARGET)/... into $(DIR_OUT)/dist/$(TARGET)...
-	@echo "building version=$(BUILD_VERSION) buildhash=$(BUILD_HASH)"
-	$(GO) build -trimpath -tags "$(GO_TAGS)" \
+	@echo "building $* version=$(BUILD_VERSION) buildhash=$(BUILD_HASH)"
+	@$(GO) build -trimpath -tags "$(GO_TAGS)" \
 		-ldflags="-w -s \
 			-X main._serviceName=$*           \
 			-X main._version=$(BUILD_VERSION) \
