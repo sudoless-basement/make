@@ -86,16 +86,17 @@ updates: ## display outdated direct dependencies
 
 .PHONY: lint
 lint: ## run golangci linter
-	@golangci-lint run -v --timeout 2m --skip-dirs=".cache/|vendor/"  ./...
+	@golangci-lint run -v --timeout 2m --skip-dirs=".cache/|vendor/|scripts/|docs/|deployment/"  ./...
 
 .PHONY: check
 check: ## run cyclic and security checks
-	@gocyclo -over 16 -ignore ".cache/|vendor/" .
-	@gosec -tests -fmt=json -quiet -exclude-dir=vendor -exclude-dir=.cache ./...
+	@gocyclo -over 16 -ignore ".cache/|vendor/|scripts/|docs/|deployment/" .
+	@gosec -tests -fmt=json -quiet -exclude-dir=vendor -exclude-dir=.cache -exclude-dir=scripts -exclude-dir=docs -exclude-dir=deployment ./...
 
 .PHONY: spelling
 spelling: ## run misspell check
-	@misspell -error .
+	@misspell -error pkg/
+	@misspell -error cmd/
 
 .PHONY: help
 help:
