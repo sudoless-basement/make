@@ -39,7 +39,6 @@ clean: ## remove build time generated files
 
 .PHONY: purge
 purge: clean ## remove everything that could cause environment issues
-	$(GO) mod tidy
 	$(GO) clean -cache
 	$(GO) clean -testcache
 	$(GO) clean -modcache
@@ -73,6 +72,10 @@ cover: ## open coverage file in browser
 mod: ## tidy and verify go modules
 	$(GO) mod tidy
 	$(GO) mod verify
+
+.PHONY: download
+download: ## download go modules
+	$(GO) mod download -x
 
 .PHONY: vendor
 vendor: ## tidy, vendor and verify dependencies
