@@ -26,4 +26,7 @@ running, versioning, updating, testing, benchmarking and everything else surroun
 ### TODO
 
 * Add support for multi-module repos
-
+* Add Docker support
+* Add deployment integration
+* Add changelog management
+* Add release management
