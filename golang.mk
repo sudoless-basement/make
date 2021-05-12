@@ -9,7 +9,7 @@
 THIS_MAKEFILE_VERSION = v0.1.0
 THIS_MAKEFILE_UPDATE = master
 THIS_MAKEFILE := $(lastword $(MAKEFILE_LIST))
-THIS_MAKEFILE_URL := https://gitlab.com/sudoless/
+THIS_MAKEFILE_URL := https://gitlab.com/sudoless/open/make/-/raw/$(THIS_MAKEFILE_UPDATE)/golang.mk
 
 
 # PATH
@@ -231,6 +231,5 @@ help:
 
 .PHONY: mk-update
 mk-update: ## update this Makefile, use THIS_MAKEFILE_UPDATE=... to specify version
-	@printf "$(FMT_PRFX) updating this makefile from $(THIS_MAKEFILE_VERSION) to $(THIS_MAKEFILE_UPDATE)\n"
-	@curl -s https://gitlab.com/sudoless/open/make/-/raw/$(THIS_MAKEFILE_UPDATE)/golang.mk > $(THIS_MAKEFILE).new
-
+	@printf "$(FMT_PRFX) updating this makefile from $(FMT_INFO)$(THIS_MAKEFILE_VERSION)$(FMT_END) to $(FMT_INFO)$(THIS_MAKEFILE_UPDATE)$(FMT_END)\n"
+	@curl -s $(THIS_MAKEFILE_URL) > $(THIS_MAKEFILE)
