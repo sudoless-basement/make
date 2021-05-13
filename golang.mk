@@ -6,7 +6,7 @@
 #      obtain one at
 #      http://mozilla.org/MPL/2.0/.
 
-THIS_MAKEFILE_VERSION = v0.1.2
+THIS_MAKEFILE_VERSION = v0.1.3
 THIS_MAKEFILE_UPDATE = master
 THIS_MAKEFILE := $(lastword $(MAKEFILE_LIST))
 THIS_MAKEFILE_URL := https://gitlab.com/sudoless/open/make/-/raw/$(THIS_MAKEFILE_UPDATE)/golang.mk
@@ -80,7 +80,7 @@ DEV_EXTERNAL_TOOLS=\
 # DOCKER
 THIS_DOCKER_BUILD_FLAGS ?=
 THIS_DOCKER_DIR ?= ./deployment/docker
-THIS_DOCKER_FILE ?= $(THIS_DOCKER_DIR)/$*.Dockerfile
+THIS_DOCKER_FILE ?= $(THIS_DOCKER_DIR)/Dockerfile
 THIS_DOCKER_TAG ?= $(BUILD_VERSION)
 THIS_DOCKER_IMAGE ?= $(PROJECT_MOD_NAME)/$*
 THIS_DOCKER_ARTIFACT ?= $(THIS_DOCKER_IMAGE):$(THIS_DOCKER_TAG)
@@ -107,7 +107,7 @@ info: ## display project information
 
 .PHONY: init
 init: ## setup a barebones Go project
-	@mkdir -p cmd/ pkg/ docs/ scripts/ data/ deployment/
+	@mkdir -p cmd/ pkg/ docs/ scripts/ data/ deployment/ internal/
 	@touch deployment/.netrc
 	@echo "deployment/.netrc\n**/.env.*" > .gitignore
 
@@ -119,7 +119,9 @@ run-%: build-% ## run the specified target
 .PHONY: build-%
 build-%: APP_OUT ?= $*_$$(go env GOOS)_$$(go env GOARCH)
 build-%: ## build a specific cmd/$(TARGET)/... into $(DIR_OUT)/dist/$(TARGET)...
-	@printf "$(FMT_PRFX) building $(FMT_INFO)$*$(FMT_END) version=$(FMT_INFO)$(BUILD_VERSION)$(FMT_END) buildhash=$(FMT_INFO)$(BUILD_HASH)$(FMT_END)\n"
+	@printf "$(FMT_PRFX) building $(FMT_INFO)$*$(FMT_END) version=$(FMT_INFO)$(BUILD_VERSION)$(FMT_END)\
+ buildhash=$(FMT_INFO)$(BUILD_HASH)$(FMT_END)\n"
+	@printf "$(FMT_PRFX) using $(FMT_INFO)$$(go version)$(FMT_END)\n"
 	@$(GO) build -trimpath -tags "$(GO_TAGS)" \
 		-ldflags="-w -s \
 			-X main._serviceName=$*           \
@@ -255,15 +257,40 @@ docker-build-%: ## build docker image
 	@printf "$(FMT_PRFX) docker on host $(FMT_WARN)$(DOCKER_HOST)$(FMT_END)\n"
 	@printf "$(FMT_PRFX) docker file $(FMT_INFO)$(THIS_DOCKER_FILE)$(FMT_END)\n"
 	@printf "$(FMT_PRFX) docker artifact output $(FMT_INFO)$(THIS_DOCKER_ARTIFACT)$(FMT_END)\n"
-	@DOCKER_BUILDKIT=1 docker build $(THIS_DOCKER_BUILD_FLAGS) --secret id=netrc,src=./deployment/.netrc -f $(THIS_DOCKER_FILE) -t $(THIS_DOCKER_ARTIFACT) --label "project=$(PROJECT_NAME)" --label "build_hash=$(BUILD_HASH)" --label "build_time=$(BUILD_TIME)" --label "build_machine=$$(whoami)@$$(hostname)" .
+	@DOCKER_BUILDKIT=1 docker build $(THIS_DOCKER_BUILD_FLAGS) \
+		--secret id=netrc,src=./deployment/.netrc \
+		--build-arg APP_NAME=$* \
+		--build-arg BUILD_VERSION=$(BUILD_VERSION) \
+		--build-arg BUILD_HASH=$(BUILD_HASH) \
+		-f $(THIS_DOCKER_FILE) -t $(THIS_DOCKER_ARTIFACT) \
+		--label "project=$(PROJECT_NAME)" \
+		--label "build_hash=$(BUILD_HASH)" \
+		--label "build_time=$(BUILD_TIME)" \
+		--label "build_machine=$$(whoami)@$$(hostname)" .
 	@printf "$(FMT_PRFX) docker artifact output $(FMT_INFO)$(THIS_DOCKER_ARTIFACT)$(FMT_END)\n"
 	@printf "$(FMT_PRFX) run $(FMT_INFO)docker tag $(THIS_DOCKER_ARTIFACT) ...$(FMT_END) to change name\n"
+
+.PHONY: docker-tag-%
+docker-tag-%: ## tags the last built docker image for the given package using its version and $IMAGE_BASE
+	@printf "$(FMT_PRFX) tagging $(FMT_INFO)$(THIS_DOCKER_ARTIFACT)$(FMT_END)\n"
+	@printf "$(FMT_PRFX) as      $(FMT_INFO)$(IMAGE_BASE)/$*:$(THIS_DOCKER_TAG)$(FMT_END)\n"
+	@docker tag $(THIS_DOCKER_ARTIFACT) $(IMAGE_BASE)/$*:$(THIS_DOCKER_TAG)
+
+.PHONY: docker-push-%
+docker-push-%: ## pushes the last tagged docker image for the given package using its version and $IMAGE_BASE
+	@printf "$(FMT_PRFX) pushing $(FMT_INFO)$(IMAGE_BASE)/$*:$(THIS_DOCKER_TAG)$(FMT_END)\n"
+	@docker push $(IMAGE_BASE)/$*:$(THIS_DOCKER_TAG)
 
 .PHONY: mk-update
 mk-update: ## update this Makefile, use THIS_MAKEFILE_UPDATE=... to specify version
 	@printf "$(FMT_PRFX) updating this makefile from $(FMT_INFO)$(THIS_MAKEFILE_VERSION)$(FMT_END) to $(FMT_INFO)$(THIS_MAKEFILE_UPDATE)$(FMT_END)\n"
-	@curl -s $(THIS_MAKEFILE_URL) > $(THIS_MAKEFILE)
+	@curl -s $(THIS_MAKEFILE_URL) > $(THIS_MAKEFILE).new
+	@awk '/^#### CUSTOM/,0' Makefile | tail -n +2 >> $(THIS_MAKEFILE).new
+	@mv -f Makefile.new Makefile
 
 .PHONY: help
 help:
 	@grep -h -E '^[a-zA-Z_-]+%?:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+
+
+#### CUSTOM # Anything under the CUSTOM line is migrated by the mk-update command to the new Makefile version

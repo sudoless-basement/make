@@ -27,13 +27,16 @@ running, versioning, updating, testing, benchmarking and everything else surroun
   * Automatically names and tags the images based on the project information
   * Makes use of DOCKER_BUILDKIT
   * Makes use of `.netrc`, a very useful "tool" for simple auth (works well with Go private repositories too)
+  * Shares binary BUILD info from the runner using `--build-arg`
+* Basic Docker tag and push commands
 * Barebone project skeleton setup with `make init`
+* Support for user/local defined make commands (using `#### CUSTOM` delimiter)
 
 ### TODO
 
 * Add support for multi-module repos
-* Extend Docker support
+* Improve Docker support
 * Add deployment integration
 * Add changelog management
 * Add release management
-* Add support for user/local defined make commands, without removing everything on `make mk-update`
+* Add env integration
