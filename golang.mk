@@ -6,7 +6,7 @@
 #      obtain one at
 #      http://mozilla.org/MPL/2.0/.
 
-THIS_MAKEFILE_VERSION = v0.1.1
+THIS_MAKEFILE_VERSION = v0.1.2
 THIS_MAKEFILE_UPDATE = master
 THIS_MAKEFILE := $(lastword $(MAKEFILE_LIST))
 THIS_MAKEFILE_URL := https://gitlab.com/sudoless/open/make/-/raw/$(THIS_MAKEFILE_UPDATE)/golang.mk
@@ -16,16 +16,18 @@ THIS_MAKEFILE_URL := https://gitlab.com/sudoless/open/make/-/raw/$(THIS_MAKEFILE
 export PATH := $(abspath bin/):${PATH}
 
 # META
+ifneq ("$(wildcard go.mod/)","") # check go.mod exists
 PROJECT_MOD_NAME := $(shell go list -m -mod=readonly)
 PROJECT_NAME := $(notdir $(PROJECT_MOD_NAME))
+endif
 
 # META - FMT
-FMT_MISC = \033[90;1m
-FMT_INFO = \033[94;1m
-FMT_OK   = \033[92;1m
-FMT_WARN = \033[33;1m
-FMT_END  = \033[0m
-FMT_PRFX = $(FMT_MISC)=>$(FMT_END)
+FMT_MISC := \033[90;1m
+FMT_INFO := \033[94;1m
+FMT_OK   := \033[92;1m
+FMT_WARN := \033[33;1m
+FMT_END  := \033[0m
+FMT_PRFX := $(FMT_MISC)=>$(FMT_END)
 
 # GO
 export CGO_ENABLED ?= 0
@@ -37,6 +39,7 @@ DIR_OUT   := out
 FILE_COV  := $(DIR_OUT)/cover.out
 
 # GIT
+ifneq ("$(wildcard .git/)","") # check .git/ exists
 GIT_TAG_HASH := $(shell git rev-list --abbrev-commit --tags --max-count=1)
 GIT_TAG := $(shell git describe --abbrev=0 --tags ${GIT_TAG_HASH} 2>/dev/null || true)
 GIT_VERSION := $(GIT_TAG)
@@ -52,6 +55,7 @@ ifeq ($(GIT_VERSION),)
 endif
 ifneq ($(shell git status --porcelain),)
 	GIT_VERSION := $(GIT_VERSION)-dirty.$$(whoami)
+endif
 endif
 
 # BUILD
@@ -73,12 +77,20 @@ DEV_EXTERNAL_TOOLS=\
 	go get mvdan.cc/gofumpt@v0.1.1 \
 	gotest.tools/gotestsum@1.6.4
 
+# DOCKER
+THIS_DOCKER_BUILD_FLAGS ?=
+THIS_DOCKER_DIR ?= ./deployment/docker
+THIS_DOCKER_FILE ?= $(THIS_DOCKER_DIR)/$*.Dockerfile
+THIS_DOCKER_TAG ?= $(BUILD_VERSION)
+THIS_DOCKER_IMAGE ?= $(PROJECT_MOD_NAME)/$*
+THIS_DOCKER_ARTIFACT ?= $(THIS_DOCKER_IMAGE):$(THIS_DOCKER_TAG)
+
 
 all: clean align spelling check lint test
 
 
 .PHONY: info
-info: ## display project informationgit diff --stat
+info: ## display project information
 	@printf "$(FMT_PRFX) printing info\n"
 	@printf "$(FMT_PRFX) project mod name $(FMT_INFO)$(PROJECT_MOD_NAME)$(FMT_END)\n"
 	@printf "$(FMT_PRFX) project name $(FMT_INFO)$(PROJECT_NAME)$(FMT_END)\n"
@@ -93,12 +105,19 @@ info: ## display project informationgit diff --stat
 	@printf "$(FMT_PRFX) git latest commit date $(FMT_INFO)$(GIT_LATEST_COMMIT_DATE)$(FMT_END)\n"
 	@printf "$(FMT_PRFX) git commit changes $(FMT_INFO)$(GIT_CHANGES)$(FMT_END)\n"
 
+.PHONY: init
+init: ## setup a barebones Go project
+	@mkdir -p cmd/ pkg/ docs/ scripts/ data/ deployment/
+	@touch deployment/.netrc
+	@echo "deployment/.netrc\n**/.env.*" > .gitignore
+
 .PHONY: run-%
 run-%: build-% ## run the specified target
 	@printf "$(FMT_PRFX) running $(FMT_INFO)$*$(FMT_END) from $(FMT_INFO)$(DIR_OUT)/dist/$*_$$(go env GOOS)_$$(go env GOARCH)$(FMT_END)\n"
 	@$(DIR_OUT)/dist/$*_$$(go env GOOS)_$$(go env GOARCH)
 
 .PHONY: build-%
+build-%: APP_OUT ?= $*_$$(go env GOOS)_$$(go env GOARCH)
 build-%: ## build a specific cmd/$(TARGET)/... into $(DIR_OUT)/dist/$(TARGET)...
 	@printf "$(FMT_PRFX) building $(FMT_INFO)$*$(FMT_END) version=$(FMT_INFO)$(BUILD_VERSION)$(FMT_END) buildhash=$(FMT_INFO)$(BUILD_HASH)$(FMT_END)\n"
 	@$(GO) build -trimpath -tags "$(GO_TAGS)" \
@@ -107,9 +126,9 @@ build-%: ## build a specific cmd/$(TARGET)/... into $(DIR_OUT)/dist/$(TARGET)...
 			-X main._version=$(BUILD_VERSION) \
 			-X main._buildTime=$(BUILD_TIME)  \
 			-X main._buildHash=$(BUILD_HASH)" \
-		-o $(DIR_OUT)/dist/$*_$$(go env GOOS)_$$(go env GOARCH) \
+		-o $(DIR_OUT)/dist/$(APP_OUT) \
 		./cmd/$*/...
-	@printf "$(FMT_PRFX) built binary $(FMT_INFO)$(DIR_OUT)/dist/$*_$$(go env GOOS)_$$(go env GOARCH)$(FMT_END)\n"
+	@printf "$(FMT_PRFX) built binary $(FMT_INFO)$(DIR_OUT)/dist/$(APP_OUT)$(FMT_END)\n"
 
 .PHONY: clean
 clean: ## remove build time generated files
@@ -162,7 +181,7 @@ tidy: ## tidy and verify go modules
 .PHONY: download
 download: ## download go modules
 	@printf "$(FMT_PRFX) downloading dependencies as modules\n"
-	$(GO) mod $(GO_MOD) download -x
+	@$(GO) mod $(GO_MOD) download -x
 
 .PHONY: vendor
 vendor: ## tidy, vendor and verify dependencies
@@ -225,11 +244,26 @@ dev-deps: ## pull developer/ci dependencies
 		$(GO) install $$tool; \
 	done
 
-.PHONY: help
-help:
-	@grep -h -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+.PHONY: docker-list
+docker-list: ## list docker images for the current project
+	@printf "$(FMT_PRF) listing images for $(FMT_INFO)$(PROJECT_NAME)$(FMT_END) project\n"
+	@docker images -f label=project=$(PROJECT_NAME)
+
+.PHONY: docker-build-%
+docker-build-%: ## build docker image
+	@printf "$(FMT_PRFX) building with docker $(FMT_INFO)$$(docker version -f 'server: {{.Server.Version}}, client: {{.Client.Version}}')$(FMT_END)\n"
+	@printf "$(FMT_PRFX) docker on host $(FMT_WARN)$(DOCKER_HOST)$(FMT_END)\n"
+	@printf "$(FMT_PRFX) docker file $(FMT_INFO)$(THIS_DOCKER_FILE)$(FMT_END)\n"
+	@printf "$(FMT_PRFX) docker artifact output $(FMT_INFO)$(THIS_DOCKER_ARTIFACT)$(FMT_END)\n"
+	@DOCKER_BUILDKIT=1 docker build $(THIS_DOCKER_BUILD_FLAGS) --secret id=netrc,src=./deployment/.netrc -f $(THIS_DOCKER_FILE) -t $(THIS_DOCKER_ARTIFACT) --label "project=$(PROJECT_NAME)" --label "build_hash=$(BUILD_HASH)" --label "build_time=$(BUILD_TIME)" --label "build_machine=$$(whoami)@$$(hostname)" .
+	@printf "$(FMT_PRFX) docker artifact output $(FMT_INFO)$(THIS_DOCKER_ARTIFACT)$(FMT_END)\n"
+	@printf "$(FMT_PRFX) run $(FMT_INFO)docker tag $(THIS_DOCKER_ARTIFACT) ...$(FMT_END) to change name\n"
 
 .PHONY: mk-update
 mk-update: ## update this Makefile, use THIS_MAKEFILE_UPDATE=... to specify version
 	@printf "$(FMT_PRFX) updating this makefile from $(FMT_INFO)$(THIS_MAKEFILE_VERSION)$(FMT_END) to $(FMT_INFO)$(THIS_MAKEFILE_UPDATE)$(FMT_END)\n"
 	@curl -s $(THIS_MAKEFILE_URL) > $(THIS_MAKEFILE)
+
+.PHONY: help
+help:
+	@grep -h -E '^[a-zA-Z_-]+%?:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
