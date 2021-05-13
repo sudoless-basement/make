@@ -36,3 +36,4 @@ running, versioning, updating, testing, benchmarking and everything else surroun
 * Add deployment integration
 * Add changelog management
 * Add release management
+* Add support for user/local defined make commands, without removing everything on `make mk-update`
