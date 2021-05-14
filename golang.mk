@@ -6,7 +6,7 @@
 #      obtain one at
 #      http://mozilla.org/MPL/2.0/.
 
-THIS_MAKEFILE_VERSION = v0.1.3
+THIS_MAKEFILE_VERSION = v0.1.4
 THIS_MAKEFILE_UPDATE = master
 THIS_MAKEFILE := $(lastword $(MAKEFILE_LIST))
 THIS_MAKEFILE_URL := https://gitlab.com/sudoless/open/make/-/raw/$(THIS_MAKEFILE_UPDATE)/golang.mk
@@ -110,6 +110,10 @@ init: ## setup a barebones Go project
 	@mkdir -p cmd/ pkg/ docs/ scripts/ data/ deployment/ internal/
 	@touch deployment/.netrc
 	@echo "deployment/.netrc\n**/.env.*" > .gitignore
+
+.PHONY: info-version
+info-version: ## prints the BUILD_VERSION and nothing else
+	@printf "$(BUILD_VERSION)"
 
 .PHONY: run-%
 run-%: build-% ## run the specified target
