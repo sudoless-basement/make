@@ -6,7 +6,7 @@
 #      obtain one at
 #      http://mozilla.org/MPL/2.0/.
 
-THIS_MAKEFILE_VERSION = v0.1.4
+THIS_MAKEFILE_VERSION = v0.1.5
 THIS_MAKEFILE_UPDATE = master
 THIS_MAKEFILE := $(lastword $(MAKEFILE_LIST))
 THIS_MAKEFILE_URL := https://gitlab.com/sudoless/open/make/-/raw/$(THIS_MAKEFILE_UPDATE)/golang.mk
@@ -73,9 +73,9 @@ DEV_EXTERNAL_TOOLS=\
 	github.com/client9/misspell/cmd/misspell@v0.3.4 \
 	github.com/fzipp/gocyclo/cmd/gocyclo@v0.3.1 \
 	github.com/jstemmer/go-junit-report@v0.9.1 \
-	go install golang.org/x/tools/go/analysis/passes/fieldalignment/cmd/fieldalignment@latest@v0.1.0 \
-	go get mvdan.cc/gofumpt@v0.1.1 \
-	gotest.tools/gotestsum@1.6.4
+	golang.org/x/tools/go/analysis/passes/fieldalignment/cmd/fieldalignment@v0.1.0 \
+	mvdan.cc/gofumpt@v0.1.1 \
+	gotest.tools/gotestsum@v1.6.4
 
 # DOCKER
 THIS_DOCKER_BUILD_FLAGS ?=
