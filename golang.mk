@@ -6,7 +6,7 @@
 #      obtain one at
 #      http://mozilla.org/MPL/2.0/.
 
-THIS_MAKEFILE_VERSION = v0.1.5
+THIS_MAKEFILE_VERSION = v0.1.6
 THIS_MAKEFILE_UPDATE = master
 THIS_MAKEFILE := $(lastword $(MAKEFILE_LIST))
 THIS_MAKEFILE_URL := https://gitlab.com/sudoless/open/make/-/raw/$(THIS_MAKEFILE_UPDATE)/golang.mk
@@ -135,6 +135,14 @@ build-%: ## build a specific cmd/$(TARGET)/... into $(DIR_OUT)/dist/$(TARGET)...
 		-o $(DIR_OUT)/dist/$(APP_OUT) \
 		./cmd/$*/...
 	@printf "$(FMT_PRFX) built binary $(FMT_INFO)$(DIR_OUT)/dist/$(APP_OUT)$(FMT_END)\n"
+
+.PHONY: install-%
+install-%: APP_OUT ?= $*_$$(go env GOOS)_$$(go env GOARCH)
+install-%: GOBIN ?= $(GOPATH)/bin
+install-%: build-% ## install the built binary to $GOBIN
+	@printf "$(FMT_PRFX) installing $(FMT_INFO)$*$(FMT_END) ($(FMT_WARN)$(APP_OUT)$(FMT_END)) at $(FMT_INFO)$(GOBIN)/$*$(FMT_END)\n"
+	@cp $(DIR_OUT)/dist/$(APP_OUT) $(GOBIN)/$*
+	@printf "$(FMT_PRFX) $(FMT_OK)ok$(FMT_END) (which=$(FMT_INFO)$(shell which $*)$(FMT_END))\n"
 
 .PHONY: clean
 clean: ## remove build time generated files
