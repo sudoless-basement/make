@@ -6,7 +6,7 @@
 #      obtain one at
 #      http://mozilla.org/MPL/2.0/.
 
-THIS_MAKEFILE_VERSION = v0.1.6
+THIS_MAKEFILE_VERSION = v0.1.7
 THIS_MAKEFILE_UPDATE = master
 THIS_MAKEFILE := $(lastword $(MAKEFILE_LIST))
 THIS_MAKEFILE_URL := https://raw.githubusercontent.com/sudoless/make/$(THIS_MAKEFILE_UPDATE)/golang.mk
@@ -48,13 +48,13 @@ GIT_LATEST_COMMIT_DATE := $(shell git log -1 --format=%cd --date=format:"%Y%m%d"
 GIT_CHANGES := $(shell git rev-list $(GIT_TAG)..HEAD --count)
 
 ifneq ($(GIT_LATEST_HASH),$(GIT_TAG_HASH))
-	GIT_VERSION := $(GIT_VERSION)-wip$(GIT_CHANGES).$(GIT_LATEST_HASH).$(GIT_LATEST_COMMIT_DATE)
+	GIT_VERSION := $(GIT_VERSION)-wip$(GIT_CHANGES).$(GIT_LATEST_HASH)
 endif
 ifeq ($(GIT_VERSION),)
 	GIT_VERSION := -new.$(GIT_LATEST_HASH).$(GIT_LATEST_COMMIT_DATE)
 endif
 ifneq ($(shell git status --porcelain),)
-	GIT_VERSION := $(GIT_VERSION)-dirty.$$(whoami)
+	GIT_VERSION := $(GIT_VERSION)-dirty.$(GIT_LATEST_COMMIT_DATE).$$(whoami)
 endif
 endif
 
