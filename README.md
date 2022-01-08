@@ -84,3 +84,6 @@ Take the following project tree as example:
 
 When calling `go/help` you are running the `help` rule from within `./make/go.mk`.
 
+### Add
+
+To quickly add a new import, use the `make add/import_name` rule. This will fetch (`curl`) the file from the defined path.
