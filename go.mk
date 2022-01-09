@@ -7,7 +7,7 @@
 #      http://mozilla.org/MPL/2.0/.
 
 
-THIS_MAKEFILE_VERSION = v0.2.0
+THIS_MAKEFILE_VERSION = v0.2.1
 THIS_MAKEFILE_UPDATE = master
 THIS_MAKEFILE := $(lastword $(MAKEFILE_LIST))
 THIS_MAKEFILE_URL := https://raw.githubusercontent.com/sudoless/make/$(THIS_MAKEFILE_UPDATE)/go.mk
@@ -41,6 +41,9 @@ DEV_EXTERNAL_TOOLS=\
 	mvdan.cc/gofumpt@v0.2.1 \
 	gotest.tools/gotestsum@v1.7.0
 
+# OTHER
+SHA256 ?= shasum -a 256
+
 
 $(DIR_OUT):
 	@mkdir -p $(DIR_OUT)
@@ -51,14 +54,14 @@ init: ## setup a barebones Go project
 	@echo "out/" >> .gitignore
 	@echo "vendor/" >> .gitignore
 
-.PHONY: run-%
-run-%: build-% ## run the specified target
+.PHONY: run/%
+run/%: build/% ## run the specified target
 	@printf "$(FMT_PRFX) running $(FMT_INFO)$*$(FMT_END) from $(FMT_INFO)$(DIR_OUT)/dist/$*_$$(go env GOOS)_$$(go env GOARCH)$(FMT_END)\n"
 	@$(DIR_OUT)/dist/$*_$$(go env GOOS)_$$(go env GOARCH)
 
-.PHONY: build-%
-build-%: APP_OUT ?= $*_$$(go env GOOS)_$$(go env GOARCH)
-build-%: ## build a specific cmd/$(TARGET)/... into $(DIR_OUT)/dist/$(TARGET)...
+.PHONY: build/%
+build/%: APP_OUT ?= $*_$$(go env GOOS)_$$(go env GOARCH)
+build/%: ## build a specific cmd/$(TARGET)/... into $(DIR_OUT)/dist/$(TARGET)...
 	@printf "$(FMT_PRFX) building $(FMT_INFO)$*$(FMT_END) version=$(FMT_INFO)$(BUILD_VERSION)$(FMT_END)\
  buildhash=$(FMT_INFO)$(BUILD_HASH)$(FMT_END)\n"
 	@printf "$(FMT_PRFX) using $(FMT_INFO)$$(go version)$(FMT_END)\n"
@@ -72,10 +75,10 @@ build-%: ## build a specific cmd/$(TARGET)/... into $(DIR_OUT)/dist/$(TARGET)...
 		./cmd/$*/...
 	@printf "$(FMT_PRFX) built binary $(FMT_INFO)$(DIR_OUT)/dist/$(APP_OUT)$(FMT_END)\n"
 
-.PHONY: install-%
-install-%: APP_OUT ?= $*_$$(go env GOOS)_$$(go env GOARCH)
-install-%: GOBIN ?= $(GOPATH)/bin
-install-%: build-% ## install the built binary to $GOBIN
+.PHONY: install/%
+install/%: APP_OUT ?= $*_$$(go env GOOS)_$$(go env GOARCH)
+install/%: GOBIN ?= $(GOPATH)/bin
+install/%: build/% ## install the built binary to $GOBIN
 	@printf "$(FMT_PRFX) installing $(FMT_INFO)$*$(FMT_END) ($(FMT_WARN)$(APP_OUT)$(FMT_END)) at $(FMT_INFO)$(GOBIN)/$*$(FMT_END)\n"
 	@cp $(DIR_OUT)/dist/$(APP_OUT) $(GOBIN)/$*
 	@printf "$(FMT_PRFX) $(FMT_OK)ok$(FMT_END) (which=$(FMT_INFO)$(shell which $*)$(FMT_END))\n"
@@ -187,12 +190,29 @@ dev-deps-file: $(DIR_OUT) ## create a file with all dev deps listed
 	done
 
 .PHONY: dev-deps
-dev-deps: ## pull developer/ci dependencies
-	@printf "$(FMT_PRFX) pulling development/CI dependencies\n"
+dev-deps: ## install developer/ci dependencies
+	@printf "$(FMT_PRFX) installing development/CI dependencies\n"
+	@printf "$(FMT_PRFX) at $(FMT_INFO)$$(go env GOBIN)$(FMT_END)\n"
 	@for tool in  $(DEV_EXTERNAL_TOOLS) ; do \
 		printf "$(FMT_PRFX) installing/updating: $(FMT_INFO)$$tool$(FMT_END)\n" ; \
 		$(GO) install $$tool; \
 	done
+
+CI_DEPENDENCIES_URL ?= https://github.com/sudoless/actions/releases/download/go-ci-deps/v0.1.0/
+CI_DEPENDENCIES_TARGET ?= $$(go env GOOS)_$$(go env GOARCH).tar.gz
+.PHONY: ci-deps
+ci-deps: ## pull pre-packaged ci dependencies at GOBIN, using GOOS and GOARCH
+	@printf "$(FMT_PRFX) pulling development/CI dependencies\n"
+	@printf "$(FMT_PRFX) at $(FMT_INFO)$$(go env GOBIN)$(FMT_END)\n"
+	@printf "$(FMT_PRFX) for $(FMT_INFO)$$(go env GOOS) $$(go env GOARCH)$(FMT_END)\n"
+	@curl -sL -o $(CI_DEPENDENCIES_TARGET) $(CI_DEPENDENCIES_URL)$(CI_DEPENDENCIES_TARGET)
+	@printf "$(FMT_PRFX) pulling checksum\n"
+	@curl -sL -o $(CI_DEPENDENCIES_TARGET).sha256 $(CI_DEPENDENCIES_URL)$(CI_DEPENDENCIES_TARGET).sha256
+	@$(SHA256) --check $(CI_DEPENDENCIES_TARGET).sha256
+	@printf "$(FMT_PRFX) unpacking\n"
+	@tar -xvf $(CI_DEPENDENCIES_TARGET) --directory=$$(go env GOBIN)
+	@printf "$(FMT_PRFX) cleanup\n"
+	@rm -rf $(CI_DEPENDENCIES_TARGET) $(CI_DEPENDENCIES_TARGET).sha256
 
 
 # INTERNAL
