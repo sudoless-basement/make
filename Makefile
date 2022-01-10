@@ -7,7 +7,7 @@
 #      http://mozilla.org/MPL/2.0/.
 
 
-THIS_MAKEFILE_VERSION = v0.0.2
+THIS_MAKEFILE_VERSION = v0.0.3
 THIS_MAKEFILE_UPDATE = master
 THIS_MAKEFILE := $(lastword $(MAKEFILE_LIST))
 THIS_MAKEFILE_URL_BASE := https://raw.githubusercontent.com/sudoless/make/$(THIS_MAKEFILE_UPDATE)
@@ -87,6 +87,7 @@ add/%: $(THIS_IMPORT_DIR)/%.$(THIS_IMPORT_EXT) ## add a new "import" makefile
 	@printf "$(FMT_PRFX) done\n"
 
 # not phony, because we do not want to overwrite existing imports
+.PRECIOUS: $(THIS_IMPORT_DIR)/%.$(THIS_IMPORT_EXT)
 $(THIS_IMPORT_DIR)/%.$(THIS_IMPORT_EXT): $(THIS_IMPORT_DIR)
 	@printf "$(FMT_PRFX) adding import $(FMT_OK)$*$(FMT_END)\n"
 	@printf "$(FMT_PRFX) downloading from $(FMT_INFO)$(THIS_MAKEFILE_URL_BASE)/$*.$(THIS_IMPORT_EXT)$(FMT_END)\n"
