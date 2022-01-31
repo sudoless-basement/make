@@ -29,6 +29,7 @@ export FMT_WARN := \033[33;1m
 export FMT_END  := \033[0m
 export FMT_PRFX := $(FMT_MISC)=>$(FMT_END)
 
+export WHOAMI ?= $(shell whoami)
 
 # GIT
 ifneq ("$(wildcard .git/)","") # check .git/ exists
@@ -40,14 +41,13 @@ export GIT_LATEST_COMMIT_DATE := $(shell git log -1 --format=%cd --date=format:"
 export GIT_CHANGES := $(shell git rev-list $(GIT_TAG)..HEAD --count)
 
 ifneq ($(GIT_LATEST_HASH),$(GIT_TAG_HASH))
-	GIT_VERSION := $(GIT_VERSION)-wip$(GIT_CHANGES).$(GIT_LATEST_HASH)
+	export GIT_VERSION := $(GIT_VERSION)-wip$(GIT_CHANGES).$(GIT_LATEST_HASH)
 endif
 ifeq ($(GIT_VERSION),)
-	GIT_VERSION := -new.$(GIT_LATEST_HASH).$(GIT_LATEST_COMMIT_DATE)
+	export GIT_VERSION := -new.$(GIT_LATEST_HASH).$(GIT_LATEST_COMMIT_DATE)
 endif
 ifneq ($(shell git status --porcelain),)
-	GIT_VERSION := $(GIT_VERSION)-dirty.$(GIT_LATEST_COMMIT_DATE).$$(whoami)
-endif
+	export GIT_VERSION := $(GIT_VERSION)-dirty.$(GIT_LATEST_COMMIT_DATE).$(WHOAMI)
 endif
 
 # SEMVER
@@ -62,12 +62,13 @@ export SV_MICRO_NEXT_1    	:= $(shell echo $$(($(SV_MICRO)+1)))
 export SV_MICRO_NEXT      	:= $(shell echo $$(($(SV_MICRO)+$(GIT_CHANGES))))
 export SV_GIT_MSG 			:= 'Bumping'
 export SV_GIT_FLAGS			:= -a -m $(SV_GIT_MSG)
+endif
+
 
 # BUILD
 export BUILD_HASH		?= $(GIT_LATEST_HASH)
 export BUILD_TIME		?= $$(date +%s)
 export BUILD_VERSION	?= $(GIT_VERSION)
-
 
 # IMPORTS
 THIS_IMPORT_DIR ?= ./make

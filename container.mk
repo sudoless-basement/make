@@ -7,7 +7,7 @@
 #      http://mozilla.org/MPL/2.0/.
 
 
-THIS_MAKEFILE_VERSION = v0.0.1
+THIS_MAKEFILE_VERSION = v0.0.2
 THIS_MAKEFILE_UPDATE = master
 THIS_MAKEFILE := $(lastword $(MAKEFILE_LIST))
 THIS_MAKEFILE_URL := https://raw.githubusercontent.com/sudoless/make/$(THIS_MAKEFILE_UPDATE)/container.mk
@@ -20,6 +20,8 @@ CONTAINER_FILE_NAME ?= Containerfile
 CONTAINER_FILE ?= $(CONTAINER_DIR)/$(CONTAINER_FILE_NAME)
 CONTAINER_USER ?= $$(whoami)
 CONTAINER_BUILD_FLAGS ?=
+
+CONTAINER_CONTEXT ?= .
 
 CONTAINER_IMAGE ?= $(CONTAINER_USER)/$(PROJECT_NAME)/$*
 CONTAINER_TAG ?= $(BUILD_VERSION)
@@ -38,6 +40,9 @@ list: ## list container images for the current project
 .PHONY: build/%
 build/%: ## build container image
 	@printf "$(FMT_PRFX) building with $(CONTAINER_TOOL) $(FMT_INFO)$$($(CONTAINER_TOOL) version -f 'server: {{.Server.Version}}, client: {{.Client.Version}}')$(FMT_END)\n"
+	@printf "$(FMT_PRFX) build machine $(FMT_INFO)$$(whoami)@$$(hostname)$(FMT_END)\n"
+	@printf "$(FMT_PRFX) build version $(FMT_INFO)$(BUILD_VERSION)$(FMT_END)\n"
+	@printf "$(FMT_PRFX) build context $(FMT_INFO)$(CONTAINER_CONTEXT)$(FMT_END)\n"
 	@printf "$(FMT_PRFX) $(CONTAINER_TOOL) on host $(FMT_WARN)$(DOCKER_HOST)$(FMT_END)\n"
 	@printf "$(FMT_PRFX) $(CONTAINER_TOOL) file $(FMT_INFO)$(CONTAINER_FILE)$(FMT_END)\n"
 	@printf "$(FMT_PRFX) $(CONTAINER_TOOL) artifact output $(FMT_INFO)$(CONTAINER_ARTIFACT)$(FMT_END)\n"
@@ -50,7 +55,7 @@ build/%: ## build container image
 		--label "app=$*" \
 		--label "build_hash=$(BUILD_HASH)" \
 		--label "build_time=$(BUILD_TIME)" \
-		--label "build_machine=$$(whoami)@$$(hostname)" .
+		--label "build_machine=$$(whoami)@$$(hostname)" $(CONTAINER_CONTEXT)
 	@printf "$(FMT_PRFX) $(CONTAINER_TOOL) artifact output $(FMT_INFO)$(CONTAINER_ARTIFACT)$(FMT_END)\n"
 	@printf "$(FMT_PRFX) run $(FMT_INFO)$(CONTAINER_TOOL) tag $(CONTAINER_ARTIFACT) ...$(FMT_END) to change name\n"
 
