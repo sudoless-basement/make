@@ -7,7 +7,7 @@
 #      http://mozilla.org/MPL/2.0/.
 
 
-THIS_MAKEFILE_VERSION = v0.0.3
+THIS_MAKEFILE_VERSION = v0.1.0
 THIS_MAKEFILE_UPDATE = master
 THIS_MAKEFILE := $(lastword $(MAKEFILE_LIST))
 THIS_MAKEFILE_URL_BASE := https://raw.githubusercontent.com/sudoless/make/$(THIS_MAKEFILE_UPDATE)
@@ -39,12 +39,16 @@ export GIT_VERSION := $(GIT_TAG)
 export GIT_LATEST_HASH := $(shell git rev-parse --short HEAD)
 export GIT_LATEST_COMMIT_DATE := $(shell git log -1 --format=%cd --date=format:"%Y%m%d")
 export GIT_CHANGES := $(shell git rev-list $(GIT_TAG)..HEAD --count)
+export GIT_BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
 
 ifneq ($(GIT_LATEST_HASH),$(GIT_TAG_HASH))
 	export GIT_VERSION := $(GIT_VERSION)-wip$(GIT_CHANGES).$(GIT_LATEST_HASH)
 endif
 ifeq ($(GIT_VERSION),)
 	export GIT_VERSION := -new.$(GIT_LATEST_HASH).$(GIT_LATEST_COMMIT_DATE)
+endif
+ifneq ($(GIT_BRANCH),master)
+	export GIT_VERSION := $(GIT_VERSION)-$(GIT_BRANCH)
 endif
 ifneq ($(shell git status --porcelain),)
 	export GIT_VERSION := $(GIT_VERSION)-dirty.$(GIT_LATEST_COMMIT_DATE).$(WHOAMI)
