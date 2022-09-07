@@ -39,7 +39,11 @@ DEV_EXTERNAL_TOOLS=\
 	github.com/jstemmer/go-junit-report@latest \
 	golang.org/x/tools/go/analysis/passes/fieldalignment/cmd/fieldalignment@latest \
 	mvdan.cc/gofumpt@latest \
-	gotest.tools/gotestsum@latest
+	gotest.tools/gotestsum@latest \
+	golang.org/x/perf/cmd/benchstat@latest \
+	github.com/psampaz/go-mod-outdated@latest \
+	golang.org/x/vuln/cmd/govulncheck@latest
+
 
 # OTHER
 SHA256 ?= shasum -a 256
@@ -152,7 +156,9 @@ lint: ## run golangci linter
 	@golangci-lint run -v --timeout 10m --skip-dirs=".cache/|vendor/|scripts/|docs/|deployment/|data/"  ./...
 
 .PHONY: check
-check: ## run cyclic, security, performance, etc checks
+check: ## run vulnerability, cyclic, security, performance, etc checks
+	@printf "$(FMT_PRFX) running vulnerability check\n"
+	@govulncheck ./...
 	@printf "$(FMT_PRFX) running cyclic analysis\n"
 	@gocyclo -over 16 -ignore ".cache/|vendor/|scripts/|docs/|deployment/|data/" .
 	@printf "$(FMT_PRFX) running static security analysis\n"
